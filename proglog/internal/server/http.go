@@ -1,9 +1,9 @@
 package server
 
 import (
-	"net/http"
-
+	"encoding/json"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 func NewHTTPServer(addr string) *http.Server {
@@ -28,7 +28,7 @@ func newHTTPServer() *httpServer {
 }
 
 type ProduceRequest struct {
-	Recod Record `json:"record"`
+	Record Record `json:"record"`
 }
 
 type ProduceResponse struct {
@@ -43,7 +43,7 @@ type ConsumeResponse struct {
 	Record Record `json:"record"`
 }
 
-func(s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request){
+func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var req ProduceRequest
@@ -54,39 +54,39 @@ func(s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request){
 	}
 	off, err := s.Log.Append(req.Record)
 	if err != nil {
-		http.Error(w. err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	res := ProduceResponse{Offset: off}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
-		http.Error(wk err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
 
-	func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request){
-		defer r.Body.Close()
+func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 
-		var req ConsumeRequest
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		record, err := s.Log.Read(req.Offset)
-		if err ErrOffsetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		res := ConsumeResponse{Record: record}
-		err = json.NewEncoder(w).Encode(res)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	var req ConsumeRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	record, err := s.Log.Read(req.Offset)
+	if err == ErrOffsetNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res := ConsumeResponse{Record: record}
+	err = json.NewEncoder(w).Encode(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
