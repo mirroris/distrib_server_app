@@ -42,3 +42,25 @@ type ConsumeRequest struct {
 type ConsumeResponse struct {
 	Record Record `json:"record"`
 }
+
+func(s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request){
+	defer r.Body.Close()
+
+	var req ProduceRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	off, err := s.Log.Append(req.Record)
+	if err != nil {
+		http.Error(w. err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res := ProduceResponse{Offset: off}
+	err = json.NewEncoder(w).Encode(res)
+	if err != nil {
+		http.Error(wk err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
