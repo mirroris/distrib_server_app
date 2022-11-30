@@ -1,6 +1,6 @@
-# Gopro
+# distrib_server_app
 
-Golangが結構面白い。
+分散サーバアプリケーション
 
 # ref
 
